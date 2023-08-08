@@ -1,20 +1,23 @@
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox
-
 import keyboard
 import pyautogui
 import win32api, win32con
 Baits=['Baits/baitCuprumCoin.png', 'Baits/baitSilverCoin.png', 'Baits/baitWood.png']
-Garbage=['Garbage/garbage2.png']
-GarbagePlace=['E.png', 'SE.png', 'GarbagePlaces/N.png', 'GarbagePlaces/NE.png', 'GarbagePlaces/NW.png', 'GarbagePlaces/S.png', 'GarbagePlaces/W.png']
-
-
+#Garbage=['Garbage/garbage2.png']
+Garbage=[]
 def click(x,y):
     win32api.SetCursorPos((x,y))
     time.sleep(0.5)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
     time.sleep(0.5)
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
+def Hold(x,y):
+    win32api.SetCursorPos((x,y))
+    time.sleep(0.5)
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
+    time.sleep(3.5)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
 def drag_and_drop(x_start, y_start, x_end, y_end):
     pyautogui.moveTo(x_start, y_start)
@@ -27,7 +30,7 @@ def ThrowFishingRod():
     #win32api.SetCursorPos((x,y))
     time.sleep(0.5)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
-    time.sleep(1)
+    time.sleep(2)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
 
 def clickShort(x,y):
@@ -35,12 +38,6 @@ def clickShort(x,y):
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
     time.sleep(0.2)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
-
-def FindGarbagePlace():
-    for place in GarbagePlace:
-        garbPlace = pyautogui.locateOnScreen(place, confidence=0.8)
-        if garbPlace != None:
-            return garbPlace
 
 
 def prepare():
@@ -80,55 +77,68 @@ def select_bait():
             if bait_location is not None:
                 pyautogui.rightClick(bait_location)
                 return  # Exit the loop after selecting the first bait found
-
-def Fishing():
+def turnOff():
     print("dvs")
     keyboard.press('z')
     time.sleep(0.2)
     keyboard.release('z')
+    # Experimental
+    keyboard.press('i')
+    time.sleep(0.2)
+    keyboard.release('i')
+
+
+def Fishing():
+
+    #Experimantal
     ThrowFishingRod()
-    #bottomHit = pyautogui.locateOnScreen("bottomLabel.png", confidence=0.8)
-    #while bottomHit!=None:
-        #ThrowFishingRod()
-        #ThrowFishingRod()
-def select_input_file():
-
-    input_file_path = filedialog.askopenfilename(title="Select garbage image",
-                                                 filetypes=(("Png files", "*.png"),("All files", "*.*")))
-    if input_file_path:
-        if not input_file_path.endswith(".png"):
-            messagebox.showerror("Error", "Input file must be a .png file!")
-            input_file_path = ""
-        else:
-            Garbage.append(input_file_path)
-
-            #input_file_label['text'] = input_file_path
-
-def select_output_file():
+    bite = pyautogui.locateOnScreen('bite.png', grayscale=True, confidence=0.95)
+    while bite == None:
+        bite = pyautogui.locateOnScreen('bite.png', grayscale=True, confidence=0.95)
+        time.sleep(1)
+    Broken= pyautogui.locateOnScreen('empty.png', grayscale=True, confidence=0.8)
+    Caught= pyautogui.locateOnScreen('caught.png', grayscale=True, confidence=0.8)
+    while Broken==None and Caught==None:
+        Hold(1,1)
+        Broken = pyautogui.locateOnScreen('empty.png', grayscale=True, confidence=0.8)
+        Caught = pyautogui.locateOnScreen('caught.png', grayscale=True, confidence=0.8)
 
 
-    output_file_path = filedialog.askopenfilename(title="Select garbage place image",
-                                                 filetypes=(("Png files", "*.png"),("All files", "*.*")))
-    if output_file_path:
-        if not output_file_path.endswith(".png"):
-            messagebox.showerror("Error", "Input file must be a .xls or .png file!")
-           # output_file_path = ""
-        else:
-            GarbagePlace.append(output_file_path)
-            #output_file_label['text'] = output_file_path
 
+
+
+def ConvertPathToText(path):
+    res=""
+    for text in path:
+        pathSplited=text.split("/")
+        res+=pathSplited[len(pathSplited)-1]+", "
+    return res
+
+
+
+
+def select_input_files():
+    input_file_paths = filedialog.askopenfilenames(title="Select garbage images",
+                                                   filetypes=(("Image files", "*.png;*.jpg;*.jpeg"),
+                                                              ("All files", "*.*")))
+    if input_file_paths:
+        for path in input_file_paths:
+            if not path.lower().endswith((".png", ".jpg", ".jpeg")):
+                messagebox.showerror("Error", "Input files must be .png, .jpg, or .jpeg files!")
+                return
+            Garbage.append(path)
+        input_file_label['text'] = ConvertPathToText(Garbage)
 def select_Bait_Images():
-
-
-    output_file_path = filedialog.askopenfilename(title="Select bait image",
-                                                 filetypes=(("Png files", "*.png"),("All files", "*.*")))
-    if output_file_path:
-        if not output_file_path.endswith(".png"):
-            messagebox.showerror("Error", "Input file must be a .xls or .png file!")
-           # output_file_path = ""
-        else:
-            Baits.append(output_file_path)
-            #output_file_label['text'] = output_file_path
+    output_file_paths = filedialog.askopenfilenames(title="Select bait images",
+                                                    filetypes=(("Image files", "*.png;*.jpg;*.jpeg"),
+                                                               ("All files", "*.*")))
+    if output_file_paths:
+        for path in output_file_paths:
+            if not path.lower().endswith((".png", ".jpg", ".jpeg")):
+                messagebox.showerror("Error", "Input files must be .png, .jpg, or .jpeg files!")
+                return
+            Baits.append(path)
+        output_file_label['text'] = ConvertPathToText(Baits)
 
 
 def StartBot():
@@ -136,18 +146,15 @@ def StartBot():
     ThrowGarbage()
     prepare()
     select_bait()
+    turnOff()
     Fishing()
 
 root = tk.Tk()
-Garbage_Image_button = tk.Button(root, text="Select Garbage Images", command=select_input_file, font=('Verdana', 14), padx=20, pady=10)
+Garbage_Image_button = tk.Button(root, text="Select Garbage Images", command=select_input_files, font=('Verdana', 14), padx=20, pady=10)
 Garbage_Image_button.pack()
 
 input_file_label = tk.Label(root, text="", font=('Verdana', 10))
 input_file_label.pack(pady=10)
-
-Garbage_Place_button = tk.Button(root, text="Select Garbage place images", command=select_output_file, font=('Verdana', 14), padx=20, pady=10)
-Garbage_Place_button.pack()
-
 
 Garbage_Place_button = tk.Button(root, text="Select Bait images", command=select_Bait_Images, font=('Verdana', 14), padx=20, pady=10)
 Garbage_Place_button.pack()
@@ -160,6 +167,3 @@ process_button.pack()
 
 root.mainloop()
 
-
-
-#time.sleep(3)
